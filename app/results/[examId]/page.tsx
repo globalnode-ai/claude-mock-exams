@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from "react";
 import Link from 'next/link';
 
 interface Question {
@@ -42,6 +42,17 @@ export default function ResultsPage({ params }: { params: Promise<{ examId: stri
   const [filterType, setFilterType] = useState<'all' | 'correct' | 'wrong'>('all');
   const [loading, setLoading] = useState(true);
 
+  const filteredQuestions = useMemo(
+    () =>
+      result?.questions?.filter((q) => {
+        if (filterType === "all") return true;
+        if (filterType === "correct") return q.isCorrect;
+        if (filterType === "wrong") return !q.isCorrect || !q.userAnswer;
+        return true;
+      }),
+    [filterType, result],
+  );
+
   useEffect(() => {
     fetch(`/api/exam/${resolvedParams.examId}`)
       .then(res => res.json())
@@ -76,13 +87,6 @@ export default function ResultsPage({ params }: { params: Promise<{ examId: stri
     if (percentage >= 60) return 'bg-yellow-50 border-yellow-200';
     return 'bg-red-50 border-red-200';
   };
-
-  const filteredQuestions = result.questions.filter(q => {
-    if (filterType === 'all') return true;
-    if (filterType === 'correct') return q.isCorrect === true;
-    if (filterType === 'wrong') return q.isCorrect === false || q.userAnswer === null;
-    return true;
-  });
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -139,7 +143,7 @@ export default function ResultsPage({ params }: { params: Promise<{ examId: stri
             {result.examType !== "full" && (
               <>
                 <div className="text-sm text-gray-600 mt-2 mb-1">Topics</div>
-                <div className="text-sm">
+                <div className="text-sm text-black">
                   {JSON.parse(result.selectedTopics).join(", ")}
                 </div>
               </>
@@ -197,7 +201,7 @@ export default function ResultsPage({ params }: { params: Promise<{ examId: stri
             </button>
           </div>
 
-          <label className="flex items-center gap-2 ml-auto">
+          <label className="flex text-black items-center gap-2 ml-auto">
             <input
               type="checkbox"
               checked={showExplanations}
@@ -210,10 +214,10 @@ export default function ResultsPage({ params }: { params: Promise<{ examId: stri
 
         {/* Questions Review */}
         <div className="space-y-6">
-          {filteredQuestions.map((item, idx) => {
+          {filteredQuestions?.map((item, idx) => {
             const userAnswerLetter = item.userAnswer || "Not answered";
             const correctAnswerLetter = item.question.correct_answer;
-            const isCorrect = item.isCorrect === true;
+            const isCorrect = !!item.isCorrect;
 
             return (
               <div
