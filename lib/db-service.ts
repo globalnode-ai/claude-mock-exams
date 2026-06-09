@@ -176,7 +176,8 @@ export function getRandomQuestions(config: ExamConfig, userId: string = 'default
           allQuestions.push(...questions);
         }
       } else {
-        // Multiple domains: 10 questions per domain
+        // Multiple domains: 20 questions per domain (max 100 total)
+        const questionsPerDomain = 20;
         query = `
           SELECT q.* FROM questions q
           LEFT JOIN question_usage qu ON q.id = qu.question_id AND qu.user_id = ?
@@ -185,11 +186,16 @@ export function getRandomQuestions(config: ExamConfig, userId: string = 'default
             CASE WHEN qu.last_used IS NULL THEN 0 ELSE 1 END,
             qu.last_used ASC,
             RANDOM()
-          LIMIT 10
+          LIMIT ?
         `;
-        const questions = db.prepare(query).all(userId, domain, 10) as ExamQuestion[];
+        const questions = db.prepare(query).all(userId, domain, questionsPerDomain) as ExamQuestion[];
         allQuestions.push(...questions);
       }
+    }
+
+    // Cap at 100 questions for multiple domain selection
+    if (config.selectedTopics.length > 1 && allQuestions.length > 100) {
+      return allQuestions.slice(0, 100);
     }
 
     return allQuestions;

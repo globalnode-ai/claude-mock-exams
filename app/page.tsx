@@ -74,7 +74,11 @@ export default function Home() {
     expectedQuestions = questionCount;
   } else if (examType === 'domain' && selectedTopics.length === 1) {
     expectedQuestions = 25;
+  } else if (examType === 'domain' && selectedTopics.length > 1) {
+    // Multiple domains: 20 questions per domain, max 100
+    expectedQuestions = Math.min(selectedTopics.length * 20, 100);
   } else {
+    // Week-by-week: 10 questions per week
     expectedQuestions = selectedTopics.length * 10;
   }
 
@@ -124,8 +128,7 @@ export default function Home() {
                     Domain-Specific Topics
                   </div>
                   <div className="text-sm text-gray-600">
-
-                    Select specific domains (25 questions for 1 domain, 10 per domain for multiple)
+                    Select specific domains (25 questions for 1 domain, 20 per domain for multiple, max 100)
                   </div>
                 </button>
 
